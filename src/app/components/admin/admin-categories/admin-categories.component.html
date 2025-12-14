@@ -1,0 +1,229 @@
+<div class="categories-container">
+  <div class="categories-header">
+    <div>
+      <h1>🗂️ Gestion des Catégories</h1>
+      <p>Organiser les produits par catégories</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      ➕ Ajouter une Catégorie
+    </button>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    ✅ {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    ❌ {{ errorMessage }}
+  </div>
+
+  <!-- Search -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="🔍 Rechercher une catégorie..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="filterCategories()"
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des catégories...</p>
+  </div>
+
+  <!-- Categories Table -->
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Nom</th>
+            <th>Slug</th>
+            <th>Description</th>
+            <th>Ordre</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let category of filteredCategories">
+            <td>
+              <img
+                [src]="getCategoryImageUrl(category)"
+                [alt]="category.name"
+                class="category-thumbnail"
+              />
+            </td>
+            <td>
+              <div class="category-name">{{ category.name }}</div>
+            </td>
+            <td>
+              <span class="slug">{{ category.slug }}</span>
+            </td>
+            <td>
+              <div class="category-desc">
+                {{ (category.description || 'Aucune description') | slice:0:50 }}
+                <span *ngIf="category.description && category.description.length > 50">...</span>
+              </div>
+            </td>
+            <td>
+              <span class="display-order">{{ category.displayOrder }}</span>
+            </td>
+            <td>
+              <span [class]="'status-badge ' + (category.isActive ? 'active' : 'inactive')">
+                {{ category.isActive ? '✓ Active' : '✗ Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(category)">
+                  ✏️ Modifier
+                </button>
+                <button class="btn-delete" (click)="deleteCategory(category.categoryId, category.name)">
+                  🗑️ Supprimer
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredCategories.length === 0" class="no-data">
+        <p>😕 Aucune catégorie trouvée</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? '✏️ Modifier la Catégorie' : '➕ Nouvelle Catégorie' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✖</button>
+    </div>
+
+    <form (submit)="onSubmit(); $event.preventDefault()">
+      <div class="modal-body">
+        <!-- Basic Information -->
+        <div class="form-group">
+          <label>Nom de la catégorie *</label>
+          <input
+            type="text"
+            [(ngModel)]="categoryForm.name"
+            name="name"
+            class="form-input"
+            placeholder="Ex: Miel Naturel"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Slug (URL)</label>
+          <input
+            type="text"
+            [(ngModel)]="categoryForm.slug"
+            name="slug"
+            class="form-input"
+            placeholder="Ex: miel-naturel (généré automatiquement)"
+          />
+          <small>Laissez vide pour génération automatique</small>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea
+            [(ngModel)]="categoryForm.description"
+            name="description"
+            class="form-input"
+            rows="3"
+            placeholder="Description de la catégorie..."
+          ></textarea>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="form-group">
+          <label>Image de la catégorie</label>
+          
+          <div *ngIf="getImagePreview()" class="image-preview-container">
+            <img 
+              [src]="getImagePreview()" 
+              alt="Aperçu" 
+              class="image-preview" 
+            />
+            <button 
+              type="button" 
+              class="btn-remove-image" 
+              (click)="removeImage()"
+            >
+              ✖ Supprimer l'image
+            </button>
+          </div>
+
+          <div *ngIf="!getImagePreview()" class="image-upload-zone">
+            <input
+              type="file"
+              id="categoryImageInput"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              class="file-input"
+              hidden
+            />
+            <label for="categoryImageInput" class="file-input-label">
+              <div class="upload-icon">📸</div>
+              <p>Cliquez pour sélectionner une image</p>
+              <small>JPG, PNG, GIF ou WebP (Max 5MB)</small>
+            </label>
+          </div>
+        </div>
+
+        <!-- Display Settings -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ordre d'affichage</label>
+            <input
+              type="number"
+              [(ngModel)]="categoryForm.displayOrder"
+              name="displayOrder"
+              class="form-input"
+              min="0"
+              value="0"
+            />
+            <small>Les catégories sont triées par ordre croissant</small>
+          </div>
+
+          <div class="form-group checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="categoryForm.isActive"
+                name="isActive"
+              />
+              <span>Catégorie active</span>
+            </label>
+            <small>La catégorie sera visible en boutique</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeModal()">
+          Annuler
+        </button>
+        <button 
+          type="submit" 
+          class="btn-submit" 
+          [disabled]="uploadLoading"
+        >
+          {{ uploadLoading ? '⏳ Upload en cours...' : (isEditMode ? 'Mettre à jour' : 'Créer la catégorie') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

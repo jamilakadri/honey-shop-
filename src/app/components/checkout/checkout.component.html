@@ -1,0 +1,243 @@
+<div class="checkout-container">
+  <div class="checkout-wrapper">
+    <!-- Header -->
+    <div class="checkout-header">
+      <h1> Checkout</h1>
+      <p>Complete your order in just a few steps</p>
+      
+    </div>
+
+    
+
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading your cart...</p>
+    </div>
+
+    <!-- Empty Cart -->
+    <div *ngIf="!loading && (!cart || cart.cartItems.length === 0)" class="empty-container">
+      <div class="empty-icon">🛒</div>
+      <h2>Your cart is empty</h2>
+      <p>Add some delicious honey to your cart to continue</p>
+      <a routerLink="/products" class="shop-btn">Browse Products</a>
+    </div>
+
+    <!-- Checkout Content -->
+    <div *ngIf="!loading && cart && cart.cartItems.length > 0" class="checkout-grid">
+      <!-- Forms Section -->
+      <div class="forms-section">
+        <!-- Shipping Address -->
+        <div class="form-card">
+          <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Shipping Address
+          </h2>
+          <form [formGroup]="shippingForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>First Name <span class="required">*</span></label>
+                <input type="text" formControlName="firstName" placeholder="John">
+                <span class="error-message" *ngIf="shippingForm.get('firstName')?.invalid && shippingForm.get('firstName')?.touched">
+                  First name is required
+                </span>
+              </div>
+              <div class="form-group">
+                <label>Last Name <span class="required">*</span></label>
+                <input type="text" formControlName="lastName" placeholder="Doe">
+                <span class="error-message" *ngIf="shippingForm.get('lastName')?.invalid && shippingForm.get('lastName')?.touched">
+                  Last name is required
+                </span>
+              </div>
+              <div class="form-group full-width">
+                <label>Email <span class="required">*</span></label>
+                <input type="email" formControlName="email" placeholder="john@example.com">
+                <span class="error-message" *ngIf="shippingForm.get('email')?.invalid && shippingForm.get('email')?.touched">
+                  Valid email is required
+                </span>
+              </div>
+              <div class="form-group full-width">
+                <label>Phone Number <span class="required">*</span></label>
+                <input type="tel" formControlName="phone" placeholder="+216 XX XXX XXX">
+                <span class="error-message" *ngIf="shippingForm.get('phone')?.invalid && shippingForm.get('phone')?.touched">
+                  Phone number is required
+                </span>
+              </div>
+              <div class="form-group full-width">
+                <label>Address <span class="required">*</span></label>
+                <input type="text" formControlName="address" placeholder="123 Main Street">
+                <span class="error-message" *ngIf="shippingForm.get('address')?.invalid && shippingForm.get('address')?.touched">
+                  Address is required
+                </span>
+              </div>
+              <div class="form-group">
+                <label>City <span class="required">*</span></label>
+                <input type="text" formControlName="city" placeholder="Tunis">
+                <span class="error-message" *ngIf="shippingForm.get('city')?.invalid && shippingForm.get('city')?.touched">
+                  City is required
+                </span>
+              </div>
+              <div class="form-group">
+                <label>Postal Code <span class="required">*</span></label>
+                <input type="text" formControlName="postalCode" placeholder="1000">
+                <span class="error-message" *ngIf="shippingForm.get('postalCode')?.invalid && shippingForm.get('postalCode')?.touched">
+                  Postal code is required
+                </span>
+              </div>
+              <div class="form-group full-width">
+                <label>Country <span class="required">*</span></label>
+                <select formControlName="country">
+                  <option value="Tunisia">Tunisia</option>
+                  <option value="France">France</option>
+                  <option value="Algeria">Algeria</option>
+                  <option value="Morocco">Morocco</option>
+                </select>
+              </div>
+            </div>
+            <div class="checkbox-group" (click)="toggleBillingSameAsShipping()">
+              <input type="checkbox" [checked]="billingSameAsShipping" (click)="$event.stopPropagation()">
+              <label>Billing address same as shipping</label>
+            </div>
+          </form>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="form-card">
+          <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            Payment Method
+          </h2>
+          <div class="payment-methods">
+            
+            
+            
+            
+            <div class="payment-option" [class.selected]="paymentMethod === 'cod'" (click)="selectPaymentMethod('cod')">
+              <input type="radio" name="payment" [checked]="paymentMethod === 'cod'">
+              <div class="payment-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <div class="payment-details">
+                <h3>Cash on Delivery</h3>
+                <p>Pay when you receive</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Notes -->
+        <div class="form-card">
+          <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            Order Notes (Optional)
+          </h2>
+          <form [formGroup]="notesForm">
+            <div class="form-group full-width">
+              <textarea 
+                formControlName="notes" 
+                rows="4" 
+                placeholder="Any special instructions for your order..."
+              ></textarea>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="order-summary">
+        <div class="summary-card">
+          <h2>Order Summary</h2>
+          
+          <!-- Cart Items -->
+          <div class="cart-items">
+            <div class="cart-item" *ngFor="let item of cart.cartItems">
+              <img [src]="getProductImage(item)" [alt]="item.product.name" class="item-image">
+              <div class="item-info">
+                <h4>{{ item.product.name }}</h4>
+                <p class="item-quantity">Quantity: {{ item.quantity }}</p>
+              </div>
+              <div class="item-price">{{ formatPrice(item.price * item.quantity) }}</div>
+            </div>
+          </div>
+
+          <!-- Promo Code -->
+          <div class="promo-section">
+            <div class="promo-input-wrapper" *ngIf="!promoApplied">
+              <input 
+                type="text" 
+                [(ngModel)]="promoCode" 
+                placeholder="Promo code"
+                (keyup.enter)="applyPromoCode()"
+              >
+              <button class="promo-btn" (click)="applyPromoCode()">Apply</button>
+            </div>
+            <div class="promo-applied" *ngIf="promoApplied">
+              <span>✓ {{ promoCode }} applied (-{{ discount }}%)</span>
+              <button class="remove-promo" (click)="removePromoCode()">×</button>
+            </div>
+          </div>
+
+          <!-- Summary Rows -->
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>{{ formatPrice(getSubtotal()) }}</span>
+            </div>
+            <div class="summary-row discount" *ngIf="discount > 0">
+              <span>Discount ({{ discount }}%)</span>
+              <span>-{{ formatPrice(getDiscountAmount()) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span>{{ formatPrice(shippingCost) }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Tax</span>
+              <span>{{ formatPrice(getTax()) }}</span>
+            </div>
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>{{ formatPrice(getTotal()) }}</span>
+            </div>
+          </div>
+
+          <!-- Place Order Button -->
+          <button 
+            class="place-order-btn" 
+            (click)="placeOrder()"
+            [disabled]="processing || !shippingForm.valid"
+          >
+            <span *ngIf="!processing">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Place Order
+            </span>
+            <span *ngIf="processing">
+              <span class="processing"></span>
+              Processing...
+            </span>
+          </button>
+
+          <div class="continue-shopping">
+            <a routerLink="/products">← Continue Shopping</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

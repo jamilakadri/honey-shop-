@@ -1,0 +1,96 @@
+<!-- src/app/components/auth/login/login.component.html -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<div class="login-container">
+  <!-- Image de miel gauche -->
+  <div class="honey-left">
+    <img src="./left.png" alt="Miel" />
+  </div>
+
+  <!-- Formulaire central -->
+  <div class="login-form-wrapper">
+    <div class="login-card">
+      <h1 class="login-title">Miel de Aoussou</h1>
+
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Adresse Email</label>
+          <input
+            id="email"
+            type="email"
+            class="form-input"
+            placeholder="Entrez votre email"
+            [(ngModel)]="loginData.email"
+            name="email"
+            required
+            email
+            #email="ngModel"
+          />
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input
+            id="password"
+            type="password"
+            class="form-input"
+            placeholder="Entrez votre mot de passe"
+            [(ngModel)]="loginData.password"
+            name="password"
+            required
+            minlength="6"
+            #password="ngModel"
+          />
+        </div>
+
+        <!-- Message d'erreur -->
+        <div *ngIf="errorMessage" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Message de succès -->
+        <div *ngIf="successMessage" class="alert alert-success">
+          {{ successMessage }}
+        </div>
+
+        <!-- Bouton Submit -->
+        <button 
+          type="submit" 
+          class="btn-login"
+          [disabled]="!loginForm.valid || loading"
+        >
+          <span *ngIf="loading">CHARGEMENT...</span>
+          <span *ngIf="!loading">SE CONNECTER</span>
+        </button>
+      </form>
+      <div *ngIf="emailNotVerified && showResendLink" class="email-not-verified-alert">
+
+        <h4>Email non vérifié</h4>
+        <p>Votre compte existe, mais vous devez d'abord vérifier votre adresse email.</p>
+        <p class="check-inbox">Vérifiez votre boîte de réception (et vos spams)</p>
+        <button type="button" class="btn-resend" (click)="goToResendVerification()">
+           Renvoyer l'email de vérification
+        </button>
+      </div>
+
+      <!-- Message de succès après inscription -->
+      <div *ngIf="successMessage && !errorMessage" class="success-banner">
+        {{ successMessage }}
+      </div>
+
+      <!-- Lien vers Register -->
+      <p class="register-link">
+        Vous n'avez pas de compte? 
+        <a routerLink="/register">Inscrivez-vous</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Image de miel droite -->
+  <div class="honey-right">
+    <img src="./right.png" alt="Miel" />
+  </div>
+</div>

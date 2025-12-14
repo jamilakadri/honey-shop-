@@ -1,0 +1,144 @@
+<!-- src/app/components/auth/register/register.component.html -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<div class="register-container">
+  <!-- Image de miel gauche -->
+  <div class="honey-left">
+    <img src="./left.png" alt="Miel" />
+  </div>
+
+  <!-- Formulaire central -->
+  <div class="register-form-wrapper">
+    <div class="register-card">
+      <h1 class="register-title">Miel de Aoussou</h1>
+
+      <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+        <!-- Prénom -->
+        <div class="form-group">
+          <label for="firstName">Prénom</label>
+          <input
+            id="firstName"
+            type="text"
+            class="form-input"
+            placeholder="Entrez votre prénom"
+            [(ngModel)]="registerData.firstName"
+            name="firstName"
+            required
+            #firstName="ngModel"
+          />
+        </div>
+
+        <!-- Nom -->
+        <div class="form-group">
+          <label for="lastName">Nom</label>
+          <input
+            id="lastName"
+            type="text"
+            class="form-input"
+            placeholder="Entrez votre nom"
+            [(ngModel)]="registerData.lastName"
+            name="lastName"
+            required
+            #lastName="ngModel"
+          />
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Adresse Email</label>
+          <input
+            id="email"
+            type="email"
+            class="form-input"
+            placeholder="Entrez votre email"
+            [(ngModel)]="registerData.email"
+            name="email"
+            required
+            email
+            #email="ngModel"
+          />
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input
+            id="password"
+            type="password"
+            class="form-input"
+            placeholder="Entrez votre mot de passe"
+            [(ngModel)]="registerData.password"
+            name="password"
+            required
+            minlength="6"
+            #password="ngModel"
+          />
+        </div>
+
+        <!-- Confirmer mot de passe -->
+        <div class="form-group">
+          <label for="confirmPassword">Confirmer le mot de passe</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            class="form-input"
+            placeholder="Confirmez votre mot de passe"
+            [(ngModel)]="registerData.confirmPassword"
+            name="confirmPassword"
+            required
+            #confirmPassword="ngModel"
+          />
+        </div>
+
+        <!-- Message d'erreur -->
+        <div *ngIf="errorMessage" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
+
+        <!-- Message de succès -->
+        <div *ngIf="successMessage" class="alert alert-success">
+          {{ successMessage }}
+        </div>
+
+        <!-- Bouton Submit -->
+        <button 
+          type="submit" 
+          class="btn-register"
+          [disabled]="!registerForm.valid || loading"
+        >
+          <span *ngIf="loading">CHARGEMENT...</span>
+          <span *ngIf="!loading">S'INSCRIRE</span>
+        </button>
+      </form>
+      <div *ngIf="showEmailVerificationMessage" class="email-verification-notice">
+        <div class="verification-icon">📧</div>
+        <h3>Vérifiez votre email !</h3>
+        <p class="verification-message">
+          Un email de vérification a été envoyé à <strong>{{ registerData.email }}</strong>
+        </p>
+        <p class="verification-instructions">
+          Veuillez cliquer sur le lien dans l'email pour activer votre compte.
+        </p>
+        <div class="verification-actions">
+          <p class="small-text">Vous n'avez pas reçu l'email ?</p>
+          <button type="button" class="btn-link" (click)="resendVerificationEmail()">
+            Renvoyer l'email de vérification
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Lien vers Login -->
+      <p class="login-link">
+        Vous avez déjà un compte? 
+        <a routerLink="/login">Connectez-vous</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Image de miel droite -->
+  <div class="honey-right">
+    <img src="./right.png" alt="Miel" />
+  </div>
+</div>

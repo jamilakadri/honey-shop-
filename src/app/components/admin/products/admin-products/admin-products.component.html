@@ -1,0 +1,635 @@
+<!-- admin-products.component.html - COMPLETE FIXED VERSION -->
+<div class="products-container">
+  <div class="products-header">
+    <div>
+      <h1>📦 Gestion des Produits</h1>
+      <p>Gérer l'inventaire de votre boutique</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">
+      ➕ Ajouter un Produit
+    </button>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    ✅ {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    ❌ {{ errorMessage }}
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="🔍 Rechercher un produit..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="filterProducts()"
+        class="search-input"
+      />
+    </div>
+    <select
+      [(ngModel)]="selectedCategory"
+      (ngModelChange)="filterProducts()"
+      class="category-select"
+    >
+      <option value="">Toutes les catégories</option>
+      <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+    </select>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des produits...</p>
+  </div>
+
+  <!-- Products Table -->
+  <div *ngIf="!loading" class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Nom</th>
+            <th>SKU</th>
+            <th>Catégorie</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let product of filteredProducts">
+            <td>
+              <img
+                [src]="getPrimaryImageUrl(product)"
+                [alt]="product.name"
+                class="product-thumbnail"
+              />
+            </td>
+            <td>
+              <div class="product-name">{{ product.name }}</div>
+              <div class="product-desc" *ngIf="product.shortDescription">
+                {{ product.shortDescription | slice:0:50 }}...
+              </div>
+            </td>
+            <td>
+              <span class="sku">{{ product.sku || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="category-badge">{{ product.category?.name || 'Sans catégorie' }}</span>
+            </td>
+            <td class="price">
+              <div>{{ formatCurrency(product.price) }}</div>
+              <div *ngIf="product.compareAtPrice && product.price && product.compareAtPrice > product.price" class="compare-price">
+                <s>{{ formatCurrency(product.compareAtPrice) }}</s>
+              </div>
+            </td>
+            <td>
+              <span [class]="product.stockQuantity > (product.lowStockThreshold || 10) ? 'stock-good' : product.stockQuantity > 0 ? 'stock-low' : 'stock-out'">
+                {{ product.stockQuantity }} unités
+              </span>
+            </td>
+            <td>
+              <span [class]="'status-badge ' + (product.isActive ? 'active' : 'inactive')">
+                {{ product.isActive ? '✓ Actif' : '✗ Inactif' }}
+              </span>
+              <span *ngIf="product.isFeatured" class="featured-badge">⭐ Vedette</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-edit" (click)="openEditModal(product)">
+                  ✏️ Modifier
+                </button>
+                <button class="btn-images" (click)="openImageModal(product)">
+                  🖼️ Images
+                </button>
+                <button class="btn-delete" (click)="deleteProduct(product.productId, product.name)">
+                  🗑️ Supprimer
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="filteredProducts.length === 0" class="no-data">
+        <p>😕 Aucun produit trouvé</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal with Image Management -->
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content extra-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ isEditMode ? '✏️ Modifier le Produit' : '➕ Nouveau Produit' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✖</button>
+    </div>
+
+    <form (submit)="onSubmit(); $event.preventDefault()">
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <button 
+          type="button"
+          [class.active]="activeTab === 'info'" 
+          (click)="activeTab = 'info'"
+          class="tab-button"
+        >
+          📋 Informations
+        </button>
+        <button 
+          type="button"
+          [class.active]="activeTab === 'images'" 
+          (click)="activeTab = 'images'"
+          class="tab-button"
+          [disabled]="!isEditMode"
+        >
+          🖼️ Images {{ isEditMode ? '(' + productImages.length + ')' : '(Sauvegarder d\'abord)' }}
+        </button>
+      </div>
+
+      <!-- Tab Content: Product Information -->
+      <div *ngIf="activeTab === 'info'" class="tab-content">
+        <!-- Basic Information -->
+        <div class="form-group">
+          <label>Nom du produit *</label>
+          <input
+            type="text"
+            [(ngModel)]="productForm.name"
+            name="name"
+            class="form-input"
+            placeholder="Ex: Miel de Fleurs d'Oranger"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Description courte</label>
+          <textarea
+            [(ngModel)]="productForm.shortDescription"
+            name="shortDescription"
+            class="form-input"
+            rows="2"
+            placeholder="Brève description pour les listes..."
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Description complète</label>
+          <textarea
+            [(ngModel)]="productForm.description"
+            name="description"
+            class="form-input"
+            rows="4"
+            placeholder="Description détaillée du produit..."
+          ></textarea>
+        </div>
+
+        <!-- Pricing -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prix de vente (TND) *</label>
+            <input
+              type="number"
+              [(ngModel)]="productForm.price"
+              name="price"
+              class="form-input"
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Prix comparatif (TND)</label>
+            <input
+              type="number"
+              [(ngModel)]="productForm.compareAtPrice"
+              name="compareAtPrice"
+              class="form-input"
+              min="0"
+              step="0.01"
+              placeholder="Ancien prix"
+            />
+            <small>Pour montrer une réduction</small>
+          </div>
+        </div>
+
+        <!-- Stock & Inventory -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Quantité en stock</label>
+            <input
+              type="number"
+              [(ngModel)]="productForm.stockQuantity"
+              name="stockQuantity"
+              class="form-input"
+              min="0"
+            />
+          </div>
+          <div class="form-group">
+            <label>Seuil d'alerte stock</label>
+            <input
+              type="number"
+              [(ngModel)]="productForm.lowStockThreshold"
+              name="lowStockThreshold"
+              class="form-input"
+              min="1"
+              value="10"
+            />
+            <small>Alerte quand le stock est inférieur à cette valeur</small>
+          </div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>SKU (Référence) - Auto-généré</label>
+            <input
+              type="text"
+              [(ngModel)]="productForm.sku"
+              name="sku"
+              class="form-input"
+              placeholder="Sera généré automatiquement..."
+              [readonly]="!isEditMode"
+              [style.background-color]="!isEditMode ? '#f5f5f5' : 'white'"
+              [style.cursor]="!isEditMode ? 'not-allowed' : 'text'"
+            />
+            <small *ngIf="!isEditMode">🔄 Le SKU sera généré automatiquement à partir du nom du produit</small>
+            <small *ngIf="isEditMode">✏️ Vous pouvez modifier le SKU manuellement si nécessaire</small>
+          </div>
+          <div class="form-group">
+            <label>Poids (g)</label>
+            <input
+              type="number"
+              [(ngModel)]="productForm.weight"
+              name="weight"
+              class="form-input"
+              min="0"
+              step="0.1"
+            />
+          </div>
+        </div>
+
+        <!-- Category & Origin -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Catégorie</label>
+            <select
+              [(ngModel)]="productForm.categoryId"
+              name="categoryId"
+              class="form-input"
+            >
+              <option [value]="undefined">Sélectionner une catégorie</option>
+              <option *ngFor="let cat of categories; let i = index" [value]="i + 1">
+                {{ cat }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Origine</label>
+            <input
+              type="text"
+              [(ngModel)]="productForm.origin"
+              name="origin"
+              class="form-input"
+              placeholder="Ex: Tunis, Jendouba..."
+            />
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date de récolte</label>
+            <input
+              type="date"
+              [(ngModel)]="productForm.harvestDate"
+              name="harvestDate"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>Date d'expiration</label>
+            <input
+              type="date"
+              [(ngModel)]="productForm.expiryDate"
+              name="expiryDate"
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div class="form-row">
+          <div class="form-group checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="productForm.isActive"
+                name="isActive"
+                checked
+              />
+              <span>Produit actif</span>
+            </label>
+            <small>Le produit sera visible en boutique</small>
+          </div>
+          <div class="form-group checkbox">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="productForm.isFeatured"
+                name="isFeatured"
+              />
+              <span>Produit vedette</span>
+            </label>
+            <small>Mettre en avant sur la page d'accueil</small>
+          </div>
+        </div>
+
+        <!-- Hidden fields -->
+        <input
+          type="hidden"
+          [(ngModel)]="productForm.slug"
+          name="slug"
+        />
+      </div>
+
+      <!-- Tab Content: Images -->
+      <div *ngIf="activeTab === 'images' && isEditMode" class="tab-content">
+        <!-- Image Upload Form -->
+        <div class="image-upload-section">
+          <h3>Ajouter une nouvelle image</h3>
+          
+          <div class="form-group">
+            <label>Sélectionner une image</label>
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              class="form-input"
+            />
+            <small>Formats acceptés: JPG, PNG, GIF, WebP</small>
+          </div>
+
+          <div class="form-group">
+            <label>Ou entrer une URL d'image:</label>
+            <input
+              type="text"
+              [(ngModel)]="imageForm.imageUrl"
+              [ngModelOptions]="{standalone: true}"
+              class="form-input"
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+
+          <div *ngIf="getImagePreview()" class="image-preview-container">
+            <label>Aperçu:</label>
+            <img 
+              [src]="getImagePreview()" 
+              alt="Aperçu" 
+              class="image-preview" 
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Texte alternatif (pour l'accessibilité)</label>
+            <input
+              type="text"
+              [(ngModel)]="imageForm.altText"
+              [ngModelOptions]="{standalone: true}"
+              class="form-input"
+              placeholder="Description de l'image"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Ordre d'affichage</label>
+              <input
+                type="number"
+                [(ngModel)]="imageForm.displayOrder"
+                [ngModelOptions]="{standalone: true}"
+                class="form-input"
+                min="0"
+                value="0"
+              />
+            </div>
+
+            <div class="form-group checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="imageForm.isPrimary"
+                  [ngModelOptions]="{standalone: true}"
+                />
+                <span>⭐ Image principale</span>
+              </label>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            class="btn-upload" 
+            (click)="uploadImage()" 
+            [disabled]="uploadLoading || (!selectedFile && !imageForm.imageUrl)"
+          >
+            {{ uploadLoading ? '⏳ Upload en cours...' : '📤 Ajouter l\'image' }}
+          </button>
+        </div>
+
+        <!-- Existing Images -->
+        <div class="existing-images-section">
+          <h3>Images existantes ({{ productImages.length }})</h3>
+          
+          <div *ngIf="productImages.length === 0" class="no-images">
+            <p>😕 Aucune image pour ce produit</p>
+            <small>Ajoutez votre première image ci-dessus</small>
+          </div>
+          
+          <div class="images-grid" *ngIf="productImages.length > 0">
+            <div *ngFor="let image of productImages" class="image-card">
+              <img 
+                [src]="getImageUrl(image.imageUrl)" 
+                [alt]="image.altText || 'Image produit'" 
+                class="image-thumbnail"
+              />
+              <div class="image-info">
+                <p><strong>Ordre:</strong> {{ image.displayOrder }}</p>
+                <p *ngIf="image.altText"><strong>Alt:</strong> {{ image.altText }}</p>
+                <span *ngIf="image.isPrimary" class="primary-badge">⭐ Principale</span>
+                <span *ngIf="!image.isPrimary" class="secondary-badge">Secondaire</span>
+              </div>
+              <div class="image-actions">
+                <button 
+                  type="button"
+                  class="btn-set-primary" 
+                  (click)="setAsPrimary(image)"
+                  [disabled]="image.isPrimary"
+                >
+                  {{ image.isPrimary ? '✓ Principale' : 'Définir comme principale' }}
+                </button>
+                <button type="button" class="btn-delete-image" (click)="deleteImage(image)">
+                  🗑️ Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeModal()">
+          Annuler
+        </button>
+        <button type="submit" class="btn-submit" [disabled]="activeTab !== 'info'">
+          {{ isEditMode ? 'Mettre à jour' : 'Créer le produit' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Separate Image Management Modal (for quick access from table) -->
+<div *ngIf="showImageModal" class="modal-overlay" (click)="closeImageModal()">
+  <div class="modal-content extra-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🖼️ Gestion des Images - {{ currentProductName }}</h2>
+      <button class="close-btn" (click)="closeImageModal()">✖</button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div *ngIf="successMessage" class="alert alert-success">
+      ✅ {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-error">
+      ❌ {{ errorMessage }}
+    </div>
+
+    <!-- Image Upload Form -->
+    <div class="image-upload-section">
+      <h3>Ajouter une nouvelle image</h3>
+      
+      <div class="form-group">
+        <label>Sélectionner une image</label>
+        <input
+          type="file"
+          id="fileInput2"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          class="form-input"
+        />
+        <small>Formats acceptés: JPG, PNG, GIF, WebP</small>
+      </div>
+
+      <div class="form-group">
+        <label>Ou entrer une URL d'image:</label>
+        <input
+          type="text"
+          [(ngModel)]="imageForm.imageUrl"
+          class="form-input"
+          placeholder="https://example.com/image.jpg"
+        />
+      </div>
+
+      <div *ngIf="getImagePreview()" class="image-preview-container">
+        <label>Aperçu:</label>
+        <img 
+          [src]="getImagePreview()" 
+          alt="Aperçu" 
+          class="image-preview" 
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Texte alternatif (pour l'accessibilité)</label>
+        <input
+          type="text"
+          [(ngModel)]="imageForm.altText"
+          class="form-input"
+          placeholder="Description de l'image"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ordre d'affichage</label>
+          <input
+            type="number"
+            [(ngModel)]="imageForm.displayOrder"
+            class="form-input"
+            min="0"
+            value="0"
+          />
+        </div>
+
+        <div class="form-group checkbox">
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="imageForm.isPrimary"
+            />
+            <span>⭐ Image principale</span>
+          </label>
+        </div>
+      </div>
+
+      <button 
+        class="btn-upload" 
+        (click)="uploadImage()" 
+        [disabled]="uploadLoading || (!selectedFile && !imageForm.imageUrl)"
+      >
+        {{ uploadLoading ? '⏳ Upload en cours...' : '📤 Ajouter l\'image' }}
+      </button>
+    </div>
+
+    <!-- Existing Images -->
+    <div class="existing-images-section">
+      <h3>Images existantes ({{ productImages.length }})</h3>
+      
+      <div *ngIf="productImages.length === 0" class="no-images">
+        <p>😕 Aucune image pour ce produit</p>
+        <small>Ajoutez votre première image ci-dessus</small>
+      </div>
+      
+      <div class="images-grid" *ngIf="productImages.length > 0">
+        <div *ngFor="let image of productImages" class="image-card">
+          <img 
+            [src]="getImageUrl(image.imageUrl)" 
+            [alt]="image.altText || 'Image produit'" 
+            class="image-thumbnail"
+          />
+          <div class="image-info">
+            <p><strong>Ordre:</strong> {{ image.displayOrder }}</p>
+            <p *ngIf="image.altText"><strong>Alt:</strong> {{ image.altText }}</p>
+            <span *ngIf="image.isPrimary" class="primary-badge">⭐ Principale</span>
+            <span *ngIf="!image.isPrimary" class="secondary-badge">Secondaire</span>
+          </div>
+          <div class="image-actions">
+            <button 
+              class="btn-set-primary" 
+              (click)="setAsPrimary(image)"
+              [disabled]="image.isPrimary"
+            >
+              {{ image.isPrimary ? '✓ Principale' : 'Définir comme principale' }}
+            </button>
+            <button class="btn-delete-image" (click)="deleteImage(image)">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" (click)="closeImageModal()">
+        Fermer
+      </button>
+    </div>
+  </div>
+</div>

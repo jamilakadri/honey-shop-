@@ -1,0 +1,283 @@
+<!-- src/app/components/admin/users/users.component.html -->
+<div class="users-container">
+  <div class="page-header">
+    <div class="header-left">
+      <h1>👥 Gestion des Utilisateurs</h1>
+      <p>Gérez les utilisateurs et leurs rôles</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      ➕ Nouvel Utilisateur
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert alert-success">
+    ✅ {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">
+    ❌ {{ errorMessage }}
+  </div>
+
+  <!-- Filtres et recherche -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (keyup.enter)="onSearch()"
+        placeholder="Rechercher par nom, email..."
+        class="search-input"
+      />
+      <button class="btn btn-secondary" (click)="onSearch()">🔍 Rechercher</button>
+    </div>
+
+    <div class="filter-group">
+      <select [(ngModel)]="selectedRole" (change)="onRoleFilterChange()" class="filter-select">
+        <option value="">Tous les rôles</option>
+        <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+      </select>
+
+      <button *ngIf="searchTerm || selectedRole" class="btn btn-outline" (click)="clearFilters()">
+        🗑️ Effacer
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement des utilisateurs...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Nom Complet</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Date d'inscription</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td>#{{ user.userId }}</td>
+          <td>
+            <div class="user-info">
+              <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+            </div>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.phoneNumber || 'N/A' }}</td>
+          <td>
+            <span [class]="'role-badge ' + getRoleBadgeClass(user.role)">
+              {{ user.role }}
+            </span>
+          </td>
+          <td>
+            <span [class]="'status-badge ' + getStatusBadgeClass(user.isActive)">
+              {{ user.isActive ? 'Actif' : 'Inactif' }}
+            </span>
+          </td>
+          <td>{{ formatDate(user.createdAt) }}</td>
+          <td>
+            <div class="action-buttons">
+              <button
+                class="btn-icon btn-edit"
+                (click)="openEditModal(user)"
+                title="Modifier"
+              >
+                ✏️
+              </button>
+              <button
+                class="btn-icon btn-toggle"
+                (click)="toggleUserStatus(user)"
+                [title]="user.isActive ? 'Désactiver' : 'Activer'"
+              >
+                {{ user.isActive ? '🔒' : '🔓' }}
+              </button>
+              <button
+                class="btn-icon btn-delete"
+                (click)="openDeleteConfirm(user)"
+                title="Supprimer"
+              >
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div *ngIf="users.length === 0" class="no-data">
+      Aucun utilisateur trouvé
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="totalPages > 1" class="pagination">
+    <button
+      class="pagination-btn"
+      (click)="previousPage()"
+      [disabled]="currentPage === 1"
+    >
+      ← Précédent
+    </button>
+
+    <div class="pagination-pages">
+      <button
+        *ngFor="let page of pages"
+        class="pagination-page"
+        [class.active]="page === currentPage"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+    </div>
+
+    <button
+      class="pagination-btn"
+      (click)="nextPage()"
+      [disabled]="currentPage === totalPages"
+    >
+      Suivant →
+    </button>
+  </div>
+
+  <div class="pagination-info">
+    Page {{ currentPage }} sur {{ totalPages }} ({{ totalUsers }} utilisateurs)
+  </div>
+</div>
+
+<!-- Modal Créer/Modifier -->
+<div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ modalMode === 'create' ? '➕ Créer un Utilisateur' : '✏️ Modifier l\'Utilisateur' }}</h2>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prénom *</label>
+          <input
+            type="text"
+            [(ngModel)]="userForm.firstName"
+            name="firstName"
+            required
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Nom *</label>
+          <input
+            type="text"
+            [(ngModel)]="userForm.lastName"
+            name="lastName"
+            required
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email *</label>
+        <input
+          type="email"
+          [(ngModel)]="userForm.email"
+          name="email"
+          required
+          [disabled]="modalMode === 'edit'"
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group" *ngIf="modalMode === 'create'">
+        <label>Mot de passe *</label>
+        <input
+          type="password"
+          [(ngModel)]="userForm.password"
+          name="password"
+          required
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Téléphone</label>
+        <input
+          type="tel"
+          [(ngModel)]="userForm.phoneNumber"
+          name="phoneNumber"
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Rôle *</label>
+          <select [(ngModel)]="userForm.role" name="role" required class="form-select">
+            <option *ngFor="let role of availableRoles" [value]="role">{{ role }}</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="modalMode === 'edit'">
+          <label>Statut</label>
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="userForm.isActive"
+              name="isActive"
+            />
+            <span>Compte actif</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" (click)="closeModal()">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary">
+          {{ modalMode === 'create' ? '✅ Créer' : '💾 Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Confirmation Suppression -->
+<div *ngIf="showDeleteConfirm" class="modal-overlay" (click)="closeDeleteConfirm()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>⚠️ Confirmer la suppression</h2>
+      <button class="close-btn" (click)="closeDeleteConfirm()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
+      <p class="user-details" *ngIf="userToDelete">
+        <strong>{{ userToDelete.firstName }} {{ userToDelete.lastName }}</strong><br>
+        {{ userToDelete.email }}
+      </p>
+      <p class="warning-text">⚠️ Cette action est irréversible.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeDeleteConfirm()">
+        Annuler
+      </button>
+      <button class="btn btn-danger" (click)="confirmDelete()">
+        🗑️ Supprimer
+      </button>
+    </div>
+  </div>
+</div>

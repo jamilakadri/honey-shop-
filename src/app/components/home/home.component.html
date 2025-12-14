@@ -1,0 +1,237 @@
+<!-- src/app/components/home/home.component.html -->
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <!-- User Profile - Top Right -->
+    <div class="user-profile-container" *ngIf="authService.isLoggedIn">
+        <div class="profile-icon-only">
+            <div class="avatar-icon">{{ getUserInitials() }}</div>
+            
+            <div class="dropdown-icon">
+                <div class="user-info-header">
+                    <span class="user-name-header">{{ getCurrentUser()?.firstName }} {{ getCurrentUser()?.lastName }}</span>
+                    <span class="user-email-header">{{ getCurrentUser()?.email }}</span>
+                </div>
+                
+                <!-- ✅ ADMIN DASHBOARD LINK - Visible uniquement pour les admins -->
+                <a *ngIf="authService.isAdmin" routerLink="/admin" class="dropdown-link admin-link">
+                    <span><img src="speedometer.png" style="height: 20px; width: 20px;" alt=""></span> Dashboard Admin
+                </a>
+                <hr *ngIf="authService.isAdmin">
+                
+                <a routerLink="/profile" class="dropdown-link">
+                    <span><img src="user.png" style="height: 20px; width: 20px;" alt=""></span>   Mon Profil
+                </a>
+                <a routerLink="/orders" class="dropdown-link">
+                    <span><img src="parcel.png" style="height: 20px; width: 20px;" alt=""></span>   Mes Commandes
+                </a>
+                <a routerLink="/cart" class="dropdown-link">
+                    <span><img src="shopping-cart.png" style="height: 20px; width: 20px;" alt=""></span>   Mon Panier
+                </a>
+                <hr>
+                <button (click)="logout()" class="dropdown-link logout-link"> Se déconnecter</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <h1 class="hero-title animate-fade-in">
+            Miel de Aoussou
+        </h1>
+        <p class="hero-subtitle animate-fade-in-delay">
+            Découvrez notre collection de miels naturels et authentiques
+        </p>
+        <div class="hero-buttons animate-fade-in-delay-2">
+            <!-- ✅ ADMIN DASHBOARD BUTTON - Grand bouton visible uniquement pour les admins -->
+            <a *ngIf="authService.isAdmin" routerLink="/admin" class="btn btn-admin btn-lg">
+                Accéder au Dashboard
+            </a>
+            
+            <a routerLink="/products" class="btn btn-primary btn-lg">
+                Découvrir nos produits
+            </a>
+            <a routerLink="/register" class="btn btn-outline btn-lg" *ngIf="!authService.isLoggedIn">
+                S'inscrire
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="home">
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Chargement...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="error-container">
+        <p>{{ error }}</p>
+        <button (click)="loadData()" class="btn btn-primary">Réessayer</button>
+    </div>
+
+    <!-- Categories Section -->
+    <section class="categories-section" *ngIf="!loading && !error">
+        <div class="container">
+            <h2 class="section-title">Nos Catégories</h2>
+            <div class="categories-grid">
+                <a 
+                    *ngFor="let category of categories" 
+                    [routerLink]="['/categories', category.slug]"
+                    class="category-card"
+                >
+                    <div class="category-image">
+                        <img 
+                        [src]="getCategoryImage(category)" 
+                        [alt]="category.name"
+                        />
+                    </div>
+                    <div class="category-info">
+                        <h3>{{ category.name }}</h3>
+                        <p>{{ category.description }}</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="products-section" *ngIf="!loading && !error">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Produits en Vedette</h2>
+                <a routerLink="/products" class="view-all-link">
+                    Voir tout →
+                </a>
+            </div>
+
+            <!-- No products -->
+            <div *ngIf="featuredProducts.length === 0" class="no-products">
+                <p>Aucun produit en vedette pour le moment</p>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="products-grid" *ngIf="featuredProducts.length > 0">
+                <div 
+                    *ngFor="let product of featuredProducts" 
+                    class="product-card"
+                >
+                    <!-- Product Image -->
+                    <div class="product-image">
+                        <a [routerLink]="['/products', product.slug]">
+                            <img 
+                                [src]="getProductImage(product)" 
+                                [alt]="product.name"
+                            />
+                        </a>
+                        <span class="badge badge-featured">⭐ En vedette</span>
+                        <span 
+                            *ngIf="product.stockQuantity === 0" 
+                            class="badge badge-out-of-stock"
+                        >
+                            Rupture de stock
+                        </span>
+                    </div>
+
+                    <!-- Product Info -->
+                    <div class="product-info">
+                        <a [routerLink]="['/products', product.slug]" class="product-name">
+                            {{ product.name }}
+                        </a>
+                        <p class="product-description">
+                            {{ product.shortDescription || product.description }}
+                        </p>
+
+                        <!-- Price -->
+                        <div class="product-price">
+                            <span class="current-price">{{ formatPrice(product.price) }}</span>
+                            <span 
+                                *ngIf="product.compareAtPrice && product.compareAtPrice > product.price" 
+                                class="old-price"
+                            >
+                                {{ formatPrice(product.compareAtPrice) }}
+                            </span>
+                        </div>
+
+                        <!-- Origin & Weight -->
+                        <div class="product-meta">
+                            <span *ngIf="product.origin">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                {{ product.origin }}
+                            </span>
+                            <span *ngIf="product.weight">
+                                ⚖️ {{ product.weight }}g
+                            </span>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="product-actions">
+                            <a 
+                                [routerLink]="['/products', product.slug]" 
+                                class="btn btn-outline btn-sm"
+                            >
+                                Voir détails
+                            </a>
+                            <button 
+                                (click)="addToCart(product)" 
+                                class="btn btn-primary btn-sm"
+                                [disabled]="product.stockQuantity === 0"
+                            >
+                                <i class="bi bi-cart"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="./natural.png" alt="Honey" /></div>
+                    <h3>100% Naturel</h3>
+                    <p>Miel pur et authentique, directement de la ruche</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="./delivery.png" alt="Honey" /></div>
+                    <h3>Livraison Rapide</h3>
+                    <p>Livraison en 24-48h partout en Tunisie</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><img src="./quality.png" alt="Honey" /></div>
+                    <h3>Qualité Garantie</h3>
+                    <p>Contrôle qualité rigoureux sur chaque produit</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="flower-left">
+        <img src="./flower.png" alt="Honey" />
+    </div>
+    <div class="container">
+        <h2>Prêt à découvrir nos produits ?</h2>
+        <p>Inscrivez-vous maintenant et profitez de 10% de réduction sur votre première commande</p>
+        <a 
+            *ngIf="!authService.isLoggedIn" 
+            routerLink="/register" 
+            class="btn btn-primary btn-lg"
+        >
+            S'inscrire maintenant
+        </a>
+        <a 
+            *ngIf="authService.isLoggedIn" 
+            routerLink="/products" 
+            class="btn btn-primary btn-lg"
+        >
+            Voir tous les produits
+        </a>
+    </div>
+</section>
