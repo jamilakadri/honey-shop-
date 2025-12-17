@@ -2,12 +2,10 @@
   "name": "miel-shop",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
-  },
+      "start": "ng serve",
+      "build": "ng build",
+      "build:prod": "ng build --configuration production"
+    },
   "private": true,
   "dependencies": {
     "@angular/animations": "^19.2.16",
@@ -20,6 +18,7 @@
     "@angular/router": "^19.2.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "http-server": "^14.1.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
