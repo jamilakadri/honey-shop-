@@ -1,7 +1,7 @@
 {
   "name": "miel-shop",
   "version": "0.0.0",
-
+  "private": true,
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -10,9 +10,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-
-
-  "private": true,
   "dependencies": {
     "@angular/animations": "^19.2.16",
     "@angular/common": "^19.2.0",
