@@ -9,8 +9,8 @@
     "serve": "http-server dist/mielShop -p 8080 -c-1",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
-  }
-}
+  },
+
 
   "private": true,
   "dependencies": {
