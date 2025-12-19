@@ -9,22 +9,27 @@ export class JwtInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Skip auth for public endpoints
+    // ✅ PUBLIC ENDPOINTS - No authentication required
     const publicEndpoints = [
       '/Auth/login',
       '/Auth/register',
+      '/Auth/verify-email',           // ✅ ADDED
+      '/Auth/resend-verification',    // ✅ ADDED
       '/Products',
       '/Categories'
     ];
     
-    const isPublic = publicEndpoints.some(endpoint => request.url.includes(endpoint));
+    // Check if this is a public endpoint
+    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+      request.url.includes(endpoint)
+    );
     
-    if (isPublic && request.method === 'GET') {
-      console.log('JWT Interceptor: Skipping auth for public GET request:', request.url);
+    if (isPublicEndpoint) {
+      console.log('🔓 JWT Interceptor: Skipping auth for public endpoint:', request.url);
       return next.handle(request);
     }
 
-    // Get token
+    // Get token for protected endpoints
     const token = this.authService.getToken();
     
     console.log('=== JWT INTERCEPTOR DEBUG ===');
@@ -33,7 +38,7 @@ export class JwtInterceptor implements HttpInterceptor {
     console.log('Token value:', token ? `${token.substring(0, 30)}...` : 'NO TOKEN');
     console.log('IsLoggedIn:', this.authService.isLoggedIn);
     
-    // 🔧 FIX: Only add header if we have a valid token
+    // Only add header if we have a valid token
     if (token && token !== 'undefined' && token !== 'null') {
       // Verify token format
       const parts = token.split('.');
