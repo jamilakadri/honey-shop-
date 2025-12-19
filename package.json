@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build --configuration production",
-    "serve": "http-server dist/mielShop/browser -p 8080 -c-1 -a 0.0.0.0",
+    "serve": "http-server dist/mielShop/browser -p 8080 -c-1 -a 0.0.0.0 --proxy https://honey-shop-production-9137.up.railway.app?",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
