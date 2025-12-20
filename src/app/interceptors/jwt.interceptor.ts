@@ -9,8 +9,8 @@ export class JwtInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService) {}
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // ✅ PUBLIC ENDPOINTS - No authentication required
-    const publicEndpoints = [
+    // ✅ PUBLIC ENDPOINTS - No authentication required for GET requests
+    const publicGetEndpoints = [
       '/Auth/login',
       '/Auth/register',
       '/Auth/verify-email',           // ✅ ADDED
@@ -19,14 +19,24 @@ export class JwtInterceptor implements HttpInterceptor {
       '/Categories'
     ];
     
-    // Check if this is a public endpoint
-    const isPublicEndpoint = publicEndpoints.some(endpoint => 
+    // Check if this is a public GET endpoint
+    const isPublicGetEndpoint = publicGetEndpoints.some(endpoint => 
       request.url.includes(endpoint)
     );
     
-    if (isPublicEndpoint) {
-      console.log('🔓 JWT Interceptor: Skipping auth for public endpoint:', request.url);
-      return next.handle(request);
+    // Only skip auth for GET requests to Products/Categories
+    // POST/PUT/DELETE to these endpoints require authentication
+    if (isPublicGetEndpoint) {
+      if (request.method === 'GET' || 
+          request.url.includes('/Auth/login') || 
+          request.url.includes('/Auth/register') ||
+          request.url.includes('/Auth/verify-email') ||
+          request.url.includes('/Auth/resend-verification')) {
+        console.log('🔓 JWT Interceptor: Skipping auth for public endpoint:', request.url);
+        return next.handle(request);
+      }
+      // If it's POST/PUT/DELETE to Products/Categories, continue to add auth
+      console.log('🔐 JWT Interceptor: Auth required for', request.method, 'request to:', request.url);
     }
 
     // Get token for protected endpoints
