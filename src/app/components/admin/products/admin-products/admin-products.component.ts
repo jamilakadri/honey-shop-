@@ -1,9 +1,10 @@
-// admin-products.component.ts - VERSION CORRIGÉE
+// admin-products.component.ts - FIXED FOR PRODUCTION
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../../services/product.service';
 import { Product, ProductImage, CreateProductDto } from '../../../../models/product.model';
+import { environment } from '../../../../../environments/environment'; // ✅ ADDED
 
 @Component({
   selector: 'app-admin-products',
@@ -15,6 +16,9 @@ import { Product, ProductImage, CreateProductDto } from '../../../../models/prod
 export class AdminProductsComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
+  
+  // ✅ ADDED: Backend URL from environment
+  private readonly backendUrl = environment.apiUrl.replace('/api', '');
   
   // Modal states
   showModal = false;
@@ -55,7 +59,9 @@ export class AdminProductsComponent implements OnInit {
     'Cire d\'Abeille'
   ];
 
-  constructor(private productService: ProductService) {}
+  constructor(private productService: ProductService) {
+    console.log('🌐 Backend URL configured:', this.backendUrl);
+  }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -67,10 +73,7 @@ export class AdminProductsComponent implements OnInit {
       next: (data) => {
         this.products = data;
         this.filteredProducts = data;
-        
-        // ✅ CORRECTION: Charger les images pour chaque produit
         this.loadImagesForAllProducts();
-        
         this.loading = false;
       },
       error: (error) => {
@@ -81,15 +84,11 @@ export class AdminProductsComponent implements OnInit {
     });
   }
 
-  // ✅ NOUVELLE MÉTHODE: Charger les images pour tous les produits
   loadImagesForAllProducts(): void {
     this.products.forEach(product => {
       this.productService.getProductImages(product.productId).subscribe({
         next: (images) => {
-          // Ajouter les images au produit correspondant
           product.productImages = images;
-          
-          // Mettre à jour la liste filtrée si nécessaire
           const index = this.filteredProducts.findIndex(p => p.productId === product.productId);
           if (index !== -1) {
             this.filteredProducts[index].productImages = images;
@@ -112,7 +111,6 @@ export class AdminProductsComponent implements OnInit {
     });
   }
 
-  // IMAGE MANAGEMENT METHODS
   openImageModal(product: Product): void {
     this.currentProductId = product.productId;
     this.currentProductName = product.name;
@@ -174,7 +172,6 @@ export class AdminProductsComponent implements OnInit {
 
     this.uploadLoading = true;
 
-    // If user selected a file, upload it
     if (this.selectedFile) {
       this.productService.uploadProductImage(
         this.currentProductId,
@@ -184,10 +181,7 @@ export class AdminProductsComponent implements OnInit {
         next: (response: any) => {
           this.successMessage = 'Image uploadée avec succès !';
           this.loadProductImages(this.currentProductId!);
-          
-          // ✅ CORRECTION: Recharger les images pour ce produit spécifique
           this.refreshProductImages(this.currentProductId!);
-          
           this.resetImageForm();
           this.uploadLoading = false;
           this.autoHideMessage();
@@ -205,7 +199,6 @@ export class AdminProductsComponent implements OnInit {
         }
       });
     } 
-    // Otherwise, use the URL directly
     else if (this.imageForm.imageUrl?.trim()) {
       const newImage: ProductImage = {
         imageId: 0,
@@ -221,10 +214,7 @@ export class AdminProductsComponent implements OnInit {
         next: (image) => {
           this.successMessage = 'Image ajoutée avec succès !';
           this.loadProductImages(this.currentProductId!);
-          
-          // ✅ CORRECTION: Recharger les images pour ce produit spécifique
           this.refreshProductImages(this.currentProductId!);
-          
           this.resetImageForm();
           this.uploadLoading = false;
           this.autoHideMessage();
@@ -238,17 +228,14 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  // ✅ NOUVELLE MÉTHODE: Rafraîchir les images d'un produit spécifique
   refreshProductImages(productId: number): void {
     this.productService.getProductImages(productId).subscribe({
       next: (images) => {
-        // Mettre à jour le produit dans la liste principale
         const productIndex = this.products.findIndex(p => p.productId === productId);
         if (productIndex !== -1) {
           this.products[productIndex].productImages = images;
         }
         
-        // Mettre à jour le produit dans la liste filtrée
         const filteredIndex = this.filteredProducts.findIndex(p => p.productId === productId);
         if (filteredIndex !== -1) {
           this.filteredProducts[filteredIndex].productImages = images;
@@ -269,8 +256,6 @@ export class AdminProductsComponent implements OnInit {
       next: () => {
         this.successMessage = 'Image principale mise à jour !';
         this.loadProductImages(this.currentProductId!);
-        
-        // ✅ CORRECTION: Rafraîchir les images après mise à jour
         this.refreshProductImages(this.currentProductId!);
       },
       error: (error) => {
@@ -289,8 +274,6 @@ export class AdminProductsComponent implements OnInit {
       next: () => {
         this.successMessage = 'Image supprimée avec succès !';
         this.loadProductImages(this.currentProductId!);
-        
-        // ✅ CORRECTION: Rafraîchir les images après suppression
         this.refreshProductImages(this.currentProductId!);
       },
       error: (error) => {
@@ -314,7 +297,6 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  // PRODUCT MANAGEMENT METHODS
   openCreateModal(): void {
     this.isEditMode = false;
     this.productForm = this.getEmptyProduct();
@@ -387,7 +369,7 @@ export class AdminProductsComponent implements OnInit {
     this.productService.createProduct(productDto).subscribe({
       next: (response) => {
         this.successMessage = 'Produit créé avec succès !';
-        this.loadProducts(); // Cette méthode va maintenant aussi charger les images
+        this.loadProducts();
         this.closeModal();
         this.autoHideMessage();
       },
@@ -404,7 +386,7 @@ export class AdminProductsComponent implements OnInit {
     this.productService.updateProduct(this.productForm.productId, this.productForm as Product).subscribe({
       next: (response) => {
         this.successMessage = 'Produit modifié avec succès !';
-        this.loadProducts(); // Cette méthode va maintenant aussi charger les images
+        this.loadProducts();
         this.closeModal();
         this.autoHideMessage();
       },
@@ -414,7 +396,6 @@ export class AdminProductsComponent implements OnInit {
       }
     });
   }
-  
 
   deleteProduct(productId: number, productName: string): void {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer "${productName}" ?`)) {
@@ -424,7 +405,7 @@ export class AdminProductsComponent implements OnInit {
     this.productService.deleteProduct(productId).subscribe({
       next: () => {
         this.successMessage = 'Produit supprimé avec succès !';
-        this.loadProducts(); // Cette méthode va maintenant aussi charger les images
+        this.loadProducts();
         this.autoHideMessage();
       },
       error: (error) => {
@@ -489,22 +470,14 @@ export class AdminProductsComponent implements OnInit {
     return `${amount.toFixed(2)} TND`;
   }
 
+  // ✅ FIXED: Use environment variable for backend URL
   getPrimaryImageUrl(product: Product): string {
-    console.log('🔍 getPrimaryImageUrl called for product:', product.name);
-    console.log('🔍 product.productImages:', product.productImages);
-    
     const primaryImage = product.productImages?.find(img => img.isPrimary);
-    console.log('🔍 primaryImage found:', primaryImage);
     
     if (primaryImage?.imageUrl) {
-      const url = primaryImage.imageUrl.startsWith('http') 
-        ? primaryImage.imageUrl 
-        : `http://localhost:5198${primaryImage.imageUrl}`;
-      console.log('🔍 Image URL to use:', url);
-      return url;
+      return this.getImageUrl(primaryImage.imageUrl);
     }
     
-    console.log('🔍 No primary image found, using default');
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
   }
 
@@ -515,12 +488,16 @@ export class AdminProductsComponent implements OnInit {
     return this.imageForm.imageUrl || '';
   }
 
+  // ✅ FIXED: Dynamic URL construction based on environment
   getImageUrl(imageUrl: string): string {
-    if (imageUrl.startsWith('http')) {
+    if (!imageUrl) return '';
+    
+    // If already a full URL, return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
     
-    const fullUrl = `http://localhost:5198${imageUrl}`;
-    return fullUrl;
+    // Otherwise, prepend the backend URL
+    return `${this.backendUrl}${imageUrl}`;
   }
 }
