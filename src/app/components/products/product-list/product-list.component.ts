@@ -9,6 +9,7 @@ import { CartService } from '../../../services/cart.service';
 import { AuthService } from '../../../services/auth.service';
 import { Product } from '../../../models/product.model';
 import { Category } from '../../../models/category.model';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-product-list',
@@ -22,6 +23,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   categories: Category[] = [];
+  private readonly apiUrl = environment.apiUrl.replace('/api', '');
   
   // Loading & Error States
   loading = true;
@@ -47,6 +49,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   
   // Subscriptions
   private subscriptions = new Subscription();
+
+  // Mobile dropdown
+  mobileDropdownOpen = false;
 
   constructor(
     private productService: ProductService,
@@ -235,7 +240,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       quantity: 1
     }).subscribe({
       next: () => {
-        this.showNotification('Produit ajoutÃ© au panier !');
+        this.showNotification('Produit ajouté au panier !');
       },
       error: (error) => {
         console.error('Error adding to cart:', error);
@@ -278,14 +283,14 @@ export class ProductListComponent implements OnInit, OnDestroy {
       const imageUrl = product.productImages[0].imageUrl;
       
       if (imageUrl.startsWith('/uploads/')) {
-        return `http://localhost:5198${imageUrl}`;
+        return `${this.apiUrl}${imageUrl}`;
       }
       
       if (imageUrl.startsWith('http')) {
         return imageUrl;
       }
       
-      return `http://localhost:5198/uploads/products/${imageUrl}`;
+      return `${this.apiUrl}/uploads/products/${imageUrl}`;
     }
     
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFNUU1RTUiLz48cGF0aCBkPSJNMTUwIDEwMEMxNjYuNTQzIDEwMCAxODAgODYuNTQyNiAxODAgNzBDMTgwIDUzLjQ1NzQgMTY2LjU0MyA0MCAxNTAgNDBDMTMzLjQ1NyA0MCAxMjAgNTMuNDU3NCAxMjAgNzBDMTIwIDg2LjU0MjYgMTMzLjQ1NyAxMDAgMTUwIDEwMFoiIGZpbGw9IiNCM0IzQjMiLz48cGF0aCBkPSJNNzAgMTYwSDE1MEwyMzAgMTYwQzI0Ni41NDMgMTYwIDI2MCAxNDYuNTQzIDI2MCAxMzBWMTAwQzI2MCA4My40NTc0IDI0Ni41NDMgNzAgMjMwIDcwSDE1MEMxMzMuNDU3IDcwIDEyMCA4My40NTc0IDEyMCAxMDBWMTMwQzEyMCAxNDYuNTQzIDEzMy40NTcgMTYwIDE1MCAxNjBaIiBmaWxsPSIjQjNCM0IzIiBmaWxsLW9wYWNpdHk9IjAuNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNzc3IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
@@ -310,9 +315,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.showMobileFilters = !this.showMobileFilters;
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
   getUserInitials(): string {
     const user = this.getCurrentUser();
     if (!user) return '';
@@ -322,21 +324,24 @@ export class ProductListComponent implements OnInit, OnDestroy {
     
     return `${firstInitial}${lastInitial}`;
   }
+
   getCurrentUser() {
     const user = this.authService.currentUserValue;
     console.log('getCurrentUser called:', user);
     return user;
   }
+
   logout(): void {
-    if (confirm('ÃŠtes-vous sÃ»r de vouloir vous dÃ©connecter ?')) {
+    if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
       this.authService.logout();
     }
   }
-  // product-list.component.ts
-  mobileDropdownOpen = false;
 
   toggleMobileDropdown() {
     this.mobileDropdownOpen = !this.mobileDropdownOpen;
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 }
