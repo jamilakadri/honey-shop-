@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../../services/category.service';
 import { Category } from '../../../models/category.model';
+import { environment } from '../../../../environments/environment'; // ✅ ADDED
 
 @Component({
   selector: 'app-admin-categories',
@@ -14,6 +15,9 @@ import { Category } from '../../../models/category.model';
 export class AdminCategoriesComponent implements OnInit {
   categories: Category[] = [];
   filteredCategories: Category[] = [];
+  
+  // ✅ ADDED: Backend URL from environment
+  private readonly backendUrl = environment.apiUrl.replace('/api', '');
   
   showModal = false;
   isEditMode = false;
@@ -30,7 +34,9 @@ export class AdminCategoriesComponent implements OnInit {
   errorMessage = '';
   uploadLoading = false;
 
-  constructor(private categoryService: CategoryService) {}
+  constructor(private categoryService: CategoryService) {
+    console.log('🌐 Backend URL configured:', this.backendUrl);
+  }
 
   ngOnInit(): void {
     this.loadCategories();
@@ -139,12 +145,17 @@ export class AdminCategoriesComponent implements OnInit {
     return '';
   }
 
+  // ✅ FIXED: Use environment variable for backend URL
   getImageUrl(imageUrl: string): string {
     if (!imageUrl) return '';
-    if (imageUrl.startsWith('http')) {
+    
+    // If already a full URL, return as is
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    return `http://localhost:5198${imageUrl}`;
+    
+    // Otherwise, prepend the backend URL
+    return `${this.backendUrl}${imageUrl}`;
   }
 
   async onSubmit(): Promise<void> {

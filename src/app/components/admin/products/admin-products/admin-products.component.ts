@@ -1,10 +1,12 @@
-// admin-products.component.ts - FIXED FOR PRODUCTION
+// admin-products.component.ts - COMPLETE FIXED VERSION
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../../services/product.service';
+import { CategoryService } from '../../../../services/category.service'; // ✅ ADDED
 import { Product, ProductImage, CreateProductDto } from '../../../../models/product.model';
-import { environment } from '../../../../../environments/environment'; // ✅ ADDED
+import { Category } from '../../../../models/category.model'; // ✅ ADDED
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-admin-products',
@@ -17,7 +19,7 @@ export class AdminProductsComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   
-  // ✅ ADDED: Backend URL from environment
+  // ✅ Backend URL from environment
   private readonly backendUrl = environment.apiUrl.replace('/api', '');
   
   // Modal states
@@ -50,21 +52,33 @@ export class AdminProductsComponent implements OnInit {
   uploadLoading = false;
   activeTab: 'info' | 'images' = 'info';
 
-  categories = [
-    'Miel Naturel',
-    'Miel Bio',
-    'Propolis',
-    'Gelée Royale',
-    'Pollen',
-    'Cire d\'Abeille'
-  ];
+  // ✅ CHANGED: From string[] to Category[]
+  categories: Category[] = [];
 
-  constructor(private productService: ProductService) {
+  constructor(
+    private productService: ProductService,
+    private categoryService: CategoryService // ✅ ADDED
+  ) {
     console.log('🌐 Backend URL configured:', this.backendUrl);
   }
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadCategories(); // ✅ ADDED
+  }
+
+  // ✅ NEW METHOD: Load categories from database
+  loadCategories(): void {
+    this.categoryService.getAllCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+        console.log('📂 Categories loaded:', this.categories);
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        this.errorMessage = 'Erreur lors du chargement des catégories';
+      }
+    });
   }
 
   loadProducts(): void {
@@ -365,6 +379,8 @@ export class AdminProductsComponent implements OnInit {
       isActive: this.productForm.isActive !== false,
       isFeatured: this.productForm.isFeatured === true
     };
+
+    console.log('🔍 Creating product with data:', productDto);
 
     this.productService.createProduct(productDto).subscribe({
       next: (response) => {

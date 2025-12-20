@@ -35,7 +35,8 @@
       class="category-select"
     >
       <option value="">Toutes les catégories</option>
-      <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      <!-- ✅ FIXED: Use category.name for value and display -->
+      <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
     </select>
   </div>
 
@@ -248,29 +249,29 @@
         <!-- Product Details -->
         <div class="form-row">
           <div class="form-group">
-            <label>SKU (Référence) - Auto-généré</label>
-            <input
-              type="text"
-              [(ngModel)]="productForm.sku"
-              name="sku"
+            <label>Catégorie *</label>
+            <select
+              [(ngModel)]="productForm.categoryId"
+              name="categoryId"
               class="form-input"
-              placeholder="Sera généré automatiquement..."
-              [readonly]="!isEditMode"
-              [style.background-color]="!isEditMode ? '#f5f5f5' : 'white'"
-              [style.cursor]="!isEditMode ? 'not-allowed' : 'text'"
-            />
-            <small *ngIf="!isEditMode">🔄 Le SKU sera généré automatiquement à partir du nom du produit</small>
-            <small *ngIf="isEditMode">✏️ Vous pouvez modifier le SKU manuellement si nécessaire</small>
+              required
+            >
+              <option [value]="undefined">Sélectionner une catégorie</option>
+              <!-- ✅ FIXED: Use cat.categoryId as value, not array index -->
+              <option *ngFor="let cat of categories" [value]="cat.categoryId">
+                {{ cat.name }}
+              </option>
+            </select>
+            <small>⚠️ Assurez-vous de sélectionner une catégorie valide</small>
           </div>
           <div class="form-group">
-            <label>Poids (g)</label>
+            <label>Origine</label>
             <input
-              type="number"
-              [(ngModel)]="productForm.weight"
-              name="weight"
+              type="text"
+              [(ngModel)]="productForm.origin"
+              name="origin"
               class="form-input"
-              min="0"
-              step="0.1"
+              placeholder="Ex: Tunis, Jendouba..."
             />
           </div>
         </div>
