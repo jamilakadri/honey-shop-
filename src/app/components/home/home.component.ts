@@ -8,6 +8,7 @@ import { CartService } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
 import { Product } from '../../models/product.model';
 import { Category } from '../../models/category.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -21,6 +22,7 @@ export class HomeComponent implements OnInit {
   categories: Category[] = [];
   loading = true;
   error = '';
+  private readonly apiUrl = environment.apiUrl.replace('/api', '');
 
   constructor(
     private productService: ProductService,
@@ -36,7 +38,7 @@ export class HomeComponent implements OnInit {
     console.log('📦 localStorage token:', localStorage.getItem('token'));
     console.log('📦 localStorage user:', localStorage.getItem('currentUser'));
     console.log('👤 currentUserValue:', this.authService.currentUserValue);
-    console.log('🔐 isLoggedIn:', this.authService.isLoggedIn);
+    console.log('🔍 isLoggedIn:', this.authService.isLoggedIn);
     console.log('👑 isAdmin:', this.authService.isAdmin);
     
     this.loadData();
@@ -71,42 +73,43 @@ export class HomeComponent implements OnInit {
       }
     });
   }
-  // ✅ NEW METHOD: Get category image URL
-getCategoryImage(category: Category): string {
-  console.log('🗂️ Getting image for category:', category.name);
-  console.log('📸 Category imageUrl:', category.imageUrl);
-  
-  if (category.imageUrl) {
-    const imageUrl = category.imageUrl;
+
+  // ✅ Get category image URL with production support
+  getCategoryImage(category: Category): string {
+    console.log('🗂️ Getting image for category:', category.name);
+    console.log('📸 Category imageUrl:', category.imageUrl);
     
-    // ✅ If it's a relative path starting with /uploads/
-    if (imageUrl.startsWith('/uploads/')) {
-      const fullUrl = `http://localhost:5198${imageUrl}`;
-      console.log('✅ Constructed category full URL:', fullUrl);
+    if (category.imageUrl) {
+      const imageUrl = category.imageUrl;
+      
+      // ✅ If it's a relative path starting with /uploads/
+      if (imageUrl.startsWith('/uploads/')) {
+        const fullUrl = `${this.apiUrl}${imageUrl}`;
+        console.log('✅ Constructed category full URL:', fullUrl);
+        return fullUrl;
+      }
+      
+      // ✅ If it's already a full URL (starts with http)
+      if (imageUrl.startsWith('http')) {
+        console.log('✅ Already full category URL:', imageUrl);
+        return imageUrl;
+      }
+      
+      // ✅ Otherwise, assume it's just the filename
+      const fullUrl = `${this.apiUrl}/uploads/categories/${imageUrl}`;
+      console.log('✅ Constructed category URL from filename:', fullUrl);
       return fullUrl;
     }
     
-    // ✅ If it's already a full URL (starts with http)
-    if (imageUrl.startsWith('http')) {
-      console.log('✅ Already full category URL:', imageUrl);
-      return imageUrl;
-    }
-    
-    // ✅ Otherwise, assume it's just the filename
-    const fullUrl = `http://localhost:5198/uploads/categories/${imageUrl}`;
-    console.log('✅ Constructed category URL from filename:', fullUrl);
-    return fullUrl;
+    console.log('❌ No category image found, using placeholder');
+    return 'assets/images/category-placeholder.jpg';
   }
-  
-  console.log('❌ No category image found, using placeholder');
-  return 'assets/images/category-placeholder.jpg';
-}
 
-// In home.component.ts, update the addToCart method:
+  // ✅ Add to cart method
   addToCart(product: Product): void {
     console.log('🛒 Add to cart clicked for product:', product);
     console.log('👤 Is user logged in?', this.authService.isLoggedIn);
-    console.log('🔐 Current user:', this.authService.currentUserValue);
+    console.log('🔍 Current user:', this.authService.currentUserValue);
     console.log('🔑 Token exists:', !!this.authService.getToken());
     
     if (!this.authService.isLoggedIn) {
@@ -129,13 +132,14 @@ getCategoryImage(category: Category): string {
       }
     });
   }
-  // Add this method to calculate discount percentage
+
+  // Calculate discount percentage
   calculateDiscount(currentPrice: number, comparePrice: number): number {
     if (!comparePrice || comparePrice <= currentPrice) return 0;
     return Math.round(((comparePrice - currentPrice) / comparePrice) * 100);
   }
 
-  // ✅ FIXED METHOD WITH DEBUG
+  // ✅ Get product image URL with production support
   getProductImage(product: Product): string {
     console.log('🖼️ Getting image for product:', product.name);
     console.log('📸 Product images array:', product.productImages);
@@ -146,7 +150,7 @@ getCategoryImage(category: Category): string {
       
       // ✅ If it's a relative path starting with /uploads/
       if (imageUrl.startsWith('/uploads/')) {
-        const fullUrl = `http://localhost:5198${imageUrl}`;
+        const fullUrl = `${this.apiUrl}${imageUrl}`;
         console.log('✅ Constructed full URL:', fullUrl);
         return fullUrl;
       }
@@ -158,7 +162,7 @@ getCategoryImage(category: Category): string {
       }
       
       // ✅ Otherwise, assume it's just the filename
-      const fullUrl = `http://localhost:5198/uploads/products/${imageUrl}`;
+      const fullUrl = `${this.apiUrl}/uploads/products/${imageUrl}`;
       console.log('✅ Constructed URL from filename:', fullUrl);
       return fullUrl;
     }
