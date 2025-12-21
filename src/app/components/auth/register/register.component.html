@@ -111,23 +111,6 @@
           <span *ngIf="!loading">S'INSCRIRE</span>
         </button>
       </form>
-      <div *ngIf="showEmailVerificationMessage" class="email-verification-notice">
-        <div class="verification-icon">📧</div>
-        <h3>Vérifiez votre email !</h3>
-        <p class="verification-message">
-          Un email de vérification a été envoyé à <strong>{{ registerData.email }}</strong>
-        </p>
-        <p class="verification-instructions">
-          Veuillez cliquer sur le lien dans l'email pour activer votre compte.
-        </p>
-        <div class="verification-actions">
-          <p class="small-text">Vous n'avez pas reçu l'email ?</p>
-          <button type="button" class="btn-link" (click)="resendVerificationEmail()">
-            Renvoyer l'email de vérification
-          </button>
-        </div>
-
-      </div>
 
       <!-- Lien vers Login -->
       <p class="login-link">

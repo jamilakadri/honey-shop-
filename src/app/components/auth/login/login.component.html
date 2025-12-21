@@ -66,20 +66,6 @@
           <span *ngIf="!loading">SE CONNECTER</span>
         </button>
       </form>
-      <div *ngIf="emailNotVerified && showResendLink" class="email-not-verified-alert">
-
-        <h4>Email non vérifié</h4>
-        <p>Votre compte existe, mais vous devez d'abord vérifier votre adresse email.</p>
-        <p class="check-inbox">Vérifiez votre boîte de réception (et vos spams)</p>
-        <button type="button" class="btn-resend" (click)="goToResendVerification()">
-           Renvoyer l'email de vérification
-        </button>
-      </div>
-
-      <!-- Message de succès après inscription -->
-      <div *ngIf="successMessage && !errorMessage" class="success-banner">
-        {{ successMessage }}
-      </div>
 
       <!-- Lien vers Register -->
       <p class="register-link">
