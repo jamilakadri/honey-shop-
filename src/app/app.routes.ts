@@ -22,14 +22,7 @@ export const routes: Routes = [
   },
   
   // ✅ NOUVELLES ROUTES AJOUTÉES - Vérification d'email
-  { 
-    path: 'verify-email', 
-    loadComponent: () => import('./components/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
-  },
-  { 
-    path: 'resend-verification', 
-    loadComponent: () => import('./components/resend-verification/resend-verification.component').then(m => m.ResendVerificationComponent)
-  },
+  
   
   // CORRECTION: Retirer guestGuard et ajouter authGuard pour order-success
   { 
