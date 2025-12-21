@@ -95,11 +95,21 @@ export class AuthService {
       tap(response => {
         console.log('📝 Register Response:', response);
         
-        // ✅ NE PAS sauvegarder la session automatiquement
-        // L'utilisateur doit d'abord vérifier son email
-        console.log('✅ Registration successful, awaiting email verification');
+        // ✅ Auto-login after registration
+        // Email validation happened on backend via AbstractAPI
+        let authData = response.data || response;
         
-        // NE PAS APPELER setSession() ici !
+        const normalizedData = {
+          token: authData.Token || authData.token,
+          userId: authData.UserId || authData.userId,
+          email: authData.Email || authData.email,
+          firstName: authData.FirstName || authData.firstName,
+          lastName: authData.LastName || authData.lastName,
+          role: authData.Role || authData.role
+        };
+        
+        console.log('✅ Auto-login after registration');
+        this.setSession(normalizedData);
       }),
       catchError(error => {
         console.error('❌ Registration error:', error);
@@ -134,32 +144,6 @@ export class AuthService {
       catchError(error => {
         console.error('❌ Login Error:', error);
         throw error;
-      })
-    );
-  }
-
-  // ✅ NOUVELLE MÉTHODE: Vérifier l'email
-  verifyEmail(token: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/verify-email`, { token }).pipe(
-      tap(response => {
-        console.log('✅ Email verified successfully:', response);
-      }),
-      catchError(error => {
-        console.error('❌ Email verification error:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
-  // ✅ NOUVELLE MÉTHODE: Renvoyer l'email de vérification
-  resendVerificationEmail(email: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/resend-verification`, { email }).pipe(
-      tap(response => {
-        console.log('✅ Verification email resent:', response);
-      }),
-      catchError(error => {
-        console.error('❌ Resend verification error:', error);
-        return throwError(() => error);
       })
     );
   }

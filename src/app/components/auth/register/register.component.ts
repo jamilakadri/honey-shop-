@@ -1,4 +1,3 @@
-// src/app/components/auth/register/register.component.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -26,7 +25,6 @@ export class RegisterComponent {
   loading = false;
   errorMessage = '';
   successMessage = '';
-  showEmailVerificationMessage = false; // ✅ NOUVEAU
 
   constructor(
     private authService: AuthService,
@@ -36,9 +34,8 @@ export class RegisterComponent {
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
-    this.showEmailVerificationMessage = false;
 
-    // Validation des mots de passe
+    // Validate passwords match
     if (this.registerData.password !== this.registerData.confirmPassword) {
       this.errorMessage = 'Les mots de passe ne correspondent pas';
       return;
@@ -48,35 +45,36 @@ export class RegisterComponent {
 
     this.authService.register(this.registerData).subscribe({
       next: (response) => {
-        console.log('✅ Registration successful');
+        console.log('✅ Registration successful - Auto logged in');
         
-        // ✅ NE PAS connecter automatiquement
-        // Afficher le message de vérification d'email
-        this.showEmailVerificationMessage = true;
-        this.successMessage = '📧 Un email de vérification a été envoyé à votre adresse. Veuillez vérifier votre boîte de réception.';
+        // ✅ Auto-logged in by auth service
+        this.successMessage = '✅ Inscription réussie ! Redirection...';
         
-        // ✅ Rediriger vers login après 5 secondes
+        // ✅ Redirect to home after 1 second
         setTimeout(() => {
-          this.router.navigate(['/login'], {
-            queryParams: { 
-              message: 'verify-email',
-              email: this.registerData.email 
-            }
-          });
-        }, 5000);
+          this.router.navigate(['/']);
+        }, 1000);
       },
       error: (error) => {
-        this.errorMessage = error.error?.message || error.message || 'Erreur lors de l\'inscription';
+        console.error('❌ Registration error:', error);
+        
+        // Check if it's an invalid email error
+        const errorMsg = error.error?.message || error.message || '';
+        
+        if (errorMsg.toLowerCase().includes('email') && 
+            (errorMsg.toLowerCase().includes('invalid') || 
+             errorMsg.toLowerCase().includes('invalide') ||
+             errorMsg.toLowerCase().includes("n'existe pas"))) {
+          this.errorMessage = '❌ Cette adresse email semble invalide ou n\'existe pas. Veuillez vérifier.';
+        } else {
+          this.errorMessage = errorMsg || 'Erreur lors de l\'inscription';
+        }
+        
         this.loading = false;
       },
       complete: () => {
         this.loading = false;
       }
     });
-  }
-
-  // ✅ NOUVEAU: Méthode pour renvoyer l'email
-  resendVerificationEmail(): void {
-    this.router.navigate(['/resend-verification']);
   }
 }
